@@ -207,7 +207,7 @@ module ActiveMerchant #:nodoc:
       
 
       def initialize(options={})
-        requires!(options, :sha_passphrase, :sha_passphrase_response, :access_code, :merchant_identifier, :sha )
+        requires!(options, :sha_passphrase, :sha_passphrase_response, :access_code, :merchant_identifier, :sha, :return_url )
         super
       end
       
