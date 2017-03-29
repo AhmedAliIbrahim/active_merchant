@@ -207,7 +207,7 @@ module ActiveMerchant #:nodoc:
       
 
       def initialize(options={})
-        requires!(options, :sha_passphrase, :sha_passphrase_response, :access_code, :merchant_identifier, :sha, :return_url )
+        requires!(options, :sha_passphrase, :sha_passphrase_response, :access_code, :merchant_identifier, :sha, :return_url)
         super
       end
       
@@ -249,8 +249,8 @@ module ActiveMerchant #:nodoc:
         commit(params, amount)
       end
       
-      def purchase(token, amount, email, id, card_security_code, remember_me)
-        params = request_params('PURCHASE', id, amount, email, token, card_security_code, remember_me)
+      def purchase(token, amount, email, id, card_security_code, remember_me, customer_ip)
+        params = request_params('PURCHASE', id, amount, email, token, card_security_code, remember_me, false, customer_ip)
         commit(params)
       end
       
@@ -264,8 +264,8 @@ module ActiveMerchant #:nodoc:
         commit(params)
       end
       
-      def authorize(token, amount, email, id, card_security_code, remember_me)
-        params = request_params('AUTHORIZATION', id, amount, email, token, card_security_code, remember_me)
+      def authorize(token, amount, email, id, card_security_code, remember_me, customer_ip)
+        params = request_params('AUTHORIZATION', id, amount, email, token, card_security_code, remember_me, false, customer_ip)
         commit(params)
       end
 
@@ -342,10 +342,11 @@ module ActiveMerchant #:nodoc:
           merchant_identifier: @options[:merchant_identifier],
           language: 'en',
           currency: 'AED',
+          return_url: @options[:return_url],
         }
       end
       
-      def request_params(command, order_id, amount, email, token, card_security_code, remember_me, recurring = false)
+      def request_params(command, order_id, amount, email, token, card_security_code, remember_me, recurring = false, customer_ip = nil)
         params = {
           command: command,
           merchant_reference: order_id,
@@ -354,6 +355,7 @@ module ActiveMerchant #:nodoc:
           token_name: token,
         }
         params.merge!(common_params)
+        params.merge!(customer_ip: customer_ip) if customer_ip.present?
         params.merge!(card_security_code: card_security_code) if card_security_code.present?
         params.merge!(remember_me: remember_me) if remember_me.present?
         params.merge!(eci: 'RECURRING') if recurring
@@ -369,6 +371,7 @@ module ActiveMerchant #:nodoc:
           fort_id: fort_id
         }
         params.merge!(common_params)
+        params.delete(:return_url)
         params.delete(:currency)
         signature = sign(params)
         params.merge!(signature: signature)
@@ -383,6 +386,7 @@ module ActiveMerchant #:nodoc:
         params.merge!(fort_id: fort_id) if command != 'VOID_AUTHORIZATION'
         params.merge!(merchant_reference: fort_id) if command == 'VOID_AUTHORIZATION'
         params.merge!(common_params)
+        params.delete(:return_url)
         params.delete(:currency) if command == 'VOID_AUTHORIZATION'
         signature = sign(params)
         params.merge!(signature: signature)
